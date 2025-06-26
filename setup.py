@@ -8,9 +8,6 @@ setup(
     install_requires=[
         'pandas',
         'duckdb',
-        're',
-        'ast',
-        'os'
     ],
     include_package_data=True,
     package_data={
