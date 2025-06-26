@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='PCPy',
+    name='PreCliPy',
     version='0.1',
     description='A biomedical lookup tool for diseases, drugs, PMC articles, and NCT trials',
     packages=find_packages(),
