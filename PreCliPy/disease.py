@@ -9,6 +9,7 @@ from importlib.resources import files, as_file
 class disease:
     def __init__(self, query):
         self.query = query.strip().lower()
+        self._db_context = None
         self.conn = self._connect_to_db()
         self.df = self.conn.execute("SELECT * FROM diseases").fetchdf()
         self.df["mesh_id"] = self.df["mesh_id"].astype(str).str.lower()
@@ -17,8 +18,17 @@ class disease:
 
     def _connect_to_db(self):
         db_file = files("PreCliPy.data").joinpath("pcpy.duckdb")
-        with as_file(db_file) as db_path:
-            return duckdb.connect(str(db_path))
+        self._db_context = as_file(db_file)
+        db_path = self._db_context.__enter__()  # keep it alive
+        return duckdb.connect(str(db_path))
+
+    def close(self):
+        """Clean up file context (optional, but good practice)"""
+        if self._db_context:
+            self._db_context.__exit__(None, None, None)
+            self._db_context = None
+        if hasattr(self, "conn"):
+            self.conn.close()
 
     def _lookup(self):
         def match_row(row):
@@ -143,3 +153,6 @@ class disease:
     @property
     def drug_count(self):
         return len(self.summary_data["drugs"])
+
+    def __del__(self):
+        self.close()
