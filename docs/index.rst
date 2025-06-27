@@ -1,18 +1,19 @@
-PreCliPy documentation
-======================
-
-Welcome to the documentation for the `preclipy` Python package.
-
-Contents:
+PreCliPy Documentation
+=====================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Modules
+   :caption: Contents:
 
-   usage
    disease
    drug
-   pmc
-   nct
    link
-   modules
+   nct
+   pmc
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
