@@ -3,18 +3,22 @@ import os
 import re
 import ast
 import pandas as pd
-from importlib.resources import files
+from importlib.resources import files, as_file
+
 
 class disease:
-    DB_PATH = str(files("PreCliPy.data").joinpath("pcpy.duckdb"))
-
     def __init__(self, query):
         self.query = query.strip().lower()
-        self.conn = duckdb.connect(self.DB_PATH)
+        self.conn = self._connect_to_db()
         self.df = self.conn.execute("SELECT * FROM diseases").fetchdf()
         self.df["mesh_id"] = self.df["mesh_id"].astype(str).str.lower()
         self.df["mesh_term"] = self.df["mesh_term"].astype(str).str.lower()
         self.summary_data = self._lookup()
+
+    def _connect_to_db(self):
+        db_file = files("PreCliPy.data").joinpath("pcpy.duckdb")
+        with as_file(db_file) as db_path:
+            return duckdb.connect(str(db_path))
 
     def _lookup(self):
         def match_row(row):
