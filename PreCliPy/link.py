@@ -2,17 +2,30 @@ import duckdb
 import os
 import ast
 import pandas as pd
-from importlib.resources import files
+from importlib.resources import files, as_file
 
 class link:
-    DB_PATH = str(files("PreCliPy.data").joinpath("pcpy.duckdb"))
-
     def __init__(self, query):
         self.query = query.strip().upper()
-        self.conn = duckdb.connect(self.DB_PATH)
+        self._db_context = None
+        self.conn = self._connect_to_db()
         self.pc_df = self.conn.execute("SELECT * FROM pmc").fetchdf()
         self.nct_df = self.conn.execute("SELECT * FROM nct").fetchdf()
         self.links = self._link_pairs()
+
+    def _connect_to_db(self):
+        db_file = files("PreCliPy.data").joinpath("pcpy.duckdb")
+        self._db_context = as_file(db_file)
+        db_path = self._db_context.__enter__()  # Keep the file handle alive
+        return duckdb.connect(str(db_path))
+
+    def close(self):
+        """Clean up file context and DB connection"""
+        if self._db_context:
+            self._db_context.__exit__(None, None, None)
+            self._db_context = None
+        if hasattr(self, "conn"):
+            self.conn.close()
 
     def _parse_terms(self, x):
         try:
@@ -45,7 +58,6 @@ class link:
             pmcid = row["pmcid"]
             pmc_title = row.get("pmc_title", "")
 
-            # Safe extraction of NCT IDs
             try:
                 raw = row.get("matched_clinical_studies", "[]")
                 nctids = ast.literal_eval(str(raw))
@@ -102,3 +114,6 @@ class link:
         return pd.DataFrame(self.links) if self.links else pd.DataFrame(columns=[
             "pmcid", "pmc_title", "pmc_link", "nctid", "nct_title", "nct_link"
         ])
+
+    def __del__(self):
+        self.close()

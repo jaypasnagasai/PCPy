@@ -1,17 +1,30 @@
 import duckdb
 import os
 import pandas as pd
-from importlib.resources import files
+from importlib.resources import files, as_file
 
 class drug:
-    DB_PATH = str(files("PreCliPy.data").joinpath("pcpy.duckdb"))
-
     def __init__(self, query):
         self.query = query.strip().lower()
-        self.conn = duckdb.connect(self.DB_PATH)
+        self._db_context = None
+        self.conn = self._connect_to_db()
         self.df = self.conn.execute("SELECT * FROM drugs").fetchdf()
         self.df["drug_name"] = self.df["drug_name"].astype(str).str.lower()
         self.summary_data = self._lookup()
+
+    def _connect_to_db(self):
+        db_file = files("PreCliPy.data").joinpath("pcpy.duckdb")
+        self._db_context = as_file(db_file)
+        db_path = self._db_context.__enter__()  # keep context alive
+        return duckdb.connect(str(db_path))
+
+    def close(self):
+        """Clean up file context (optional, but good practice)"""
+        if self._db_context:
+            self._db_context.__exit__(None, None, None)
+            self._db_context = None
+        if hasattr(self, "conn"):
+            self.conn.close()
 
     def _lookup(self):
         matches = self.df[self.df["drug_name"] == self.query]
@@ -75,3 +88,6 @@ class drug:
     @property
     def disease_breakdown_count(self):
         return len(self.summary_data["disease_breakdown"])
+
+    def __del__(self):
+        self.close()

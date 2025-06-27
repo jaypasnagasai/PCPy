@@ -2,15 +2,14 @@ import duckdb
 import os
 import ast
 import pandas as pd
-from importlib.resources import files
+from importlib.resources import files, as_file
 
 class pmc:
-    DB_PATH = str(files("PreCliPy.data").joinpath("pcpy.duckdb"))
-
-
     def __init__(self, pmcid):
         self.pmcid = pmcid.strip().upper()
-        self.conn = duckdb.connect(self.DB_PATH)
+        self._db_context = None
+        self.conn = self._connect_to_db()
+
         self.df = self.conn.execute("SELECT * FROM pmc").fetchdf()
         self.df["pmcid"] = self.df["pmcid"].astype(str).str.upper()
 
@@ -20,6 +19,20 @@ class pmc:
 
         self._diseases_df = self._build_disease_df()
         self._clinical_df = self._build_clinical_df()
+
+    def _connect_to_db(self):
+        db_file = files("PreCliPy.data").joinpath("pcpy.duckdb")
+        self._db_context = as_file(db_file)
+        db_path = self._db_context.__enter__()  # Keep the resource alive
+        return duckdb.connect(str(db_path))
+
+    def close(self):
+        """Clean up file context and DB connection"""
+        if self._db_context:
+            self._db_context.__exit__(None, None, None)
+            self._db_context = None
+        if hasattr(self, "conn"):
+            self.conn.close()
 
     def summary(self, key=None):
         title = self.matches["pmc_title"].iloc[0] if "pmc_title" in self.matches else "N/A"
@@ -117,3 +130,6 @@ class pmc:
     @property
     def clinical_count(self):
         return len(self._clinical_df)
+
+    def __del__(self):
+        self.close()

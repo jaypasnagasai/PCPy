@@ -2,14 +2,13 @@ import duckdb
 import os
 import ast
 import pandas as pd
-from importlib.resources import files
+from importlib.resources import files, as_file
 
 class nct:
-    DB_PATH = str(files("PreCliPy.data").joinpath("pcpy.duckdb"))
-
     def __init__(self, nctid):
         self.nctid = nctid.strip().upper()
-        self.conn = duckdb.connect(self.DB_PATH)
+        self._db_context = None
+        self.conn = self._connect_to_db()
         self.nct_df = self.conn.execute("SELECT * FROM nct").fetchdf()
         self.pc_df = self.conn.execute("SELECT * FROM pmc").fetchdf()
 
@@ -21,6 +20,20 @@ class nct:
             self.pc_df["matched_clinical_studies"].apply(self._contains_nctid)
         ]
         self._preclinical_df = self._build_preclinical_df()
+
+    def _connect_to_db(self):
+        db_file = files("PreCliPy.data").joinpath("pcpy.duckdb")
+        self._db_context = as_file(db_file)
+        db_path = self._db_context.__enter__()  # Keep the resource alive
+        return duckdb.connect(str(db_path))
+
+    def close(self):
+        """Clean up file context and DB connection"""
+        if self._db_context:
+            self._db_context.__exit__(None, None, None)
+            self._db_context = None
+        if hasattr(self, "conn"):
+            self.conn.close()
 
     def _contains_nctid(self, val):
         try:
@@ -114,3 +127,6 @@ class nct:
     @property
     def preclinical_count(self):
         return len(self._preclinical_df)
+
+    def __del__(self):
+        self.close()
