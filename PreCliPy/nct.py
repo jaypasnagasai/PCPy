@@ -5,7 +5,7 @@ import pandas as pd
 from importlib.resources import files
 
 class nct:
-    DB_PATH = str(files("PCPy.data").joinpath("pcpy.duckdb"))
+    DB_PATH = str(files("PreCliPy.data").joinpath("pcpy.duckdb"))
 
     def __init__(self, nctid):
         self.nctid = nctid.strip().upper()
