@@ -11,6 +11,6 @@ setup(
     ],
     include_package_data=True,
     package_data={
-        'PCPy': ['data/*.duckdb']
+        'PCPy': ['data/pcpy.duckdb']
     },
 )
