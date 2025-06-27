@@ -1,4 +1,4 @@
-Drug Module
+Drug 
 ===========
 
 .. automodule:: drug

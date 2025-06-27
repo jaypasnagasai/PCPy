@@ -1,4 +1,4 @@
-Link Module
+Link 
 ===========
 
 .. automodule:: link

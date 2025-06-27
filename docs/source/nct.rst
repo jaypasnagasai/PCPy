@@ -1,4 +1,4 @@
-NCT Module
+NCT 
 ==========
 
 .. automodule:: nct

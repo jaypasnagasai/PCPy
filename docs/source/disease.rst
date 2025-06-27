@@ -1,4 +1,4 @@
-Disease Module
+Disease 
 ==============
 
 .. automodule:: disease
